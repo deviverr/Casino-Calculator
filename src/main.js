@@ -5,6 +5,7 @@ import * as S from './screen.js';
 import { store, load } from './store.js';
 import { audio } from './audio.js';
 import { game } from './game.js';
+import { track } from './analytics.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -95,6 +96,7 @@ async function boot() {
   const flatCtx = world ? null : $('flatScreen').getContext('2d');
 
   game.go('boot');
+  track('boot', { mode: world ? '3d' : '2d' });
   window.__cc = { game, S, store, audio, world }; // console debug handle
   setProgress(100, 'DEAL ME IN.');
   setTimeout(() => $('loader').classList.add('done'), 250);

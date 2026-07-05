@@ -6,6 +6,7 @@ import {
 } from './content.js';
 import { audio } from './audio.js';
 import { store, save } from './store.js';
+import { track } from './analytics.js';
 
 const START_CHIPS = 100;
 const MIN_WAGER = 10;
@@ -285,9 +286,11 @@ export class Run {
     this.score += this.round.quota;
     if (this.has('interest')) this.chips += Math.min(200, Math.round(this.chips * 0.1));
     audio.sfx('cash');
+    track('ante_cleared', { ante: this.ante, chips: this.chips });
     if (this.ante === FINAL_ANTE && !this.overtime) {
       this.phase = 'victory';
       audio.sfx('victory');
+      track('victory', { score: this.score, chips: this.chips });
       this.persist();
       return;
     }
@@ -378,6 +381,7 @@ export class Run {
     this.deathReason = reason;
     this.phase = 'dead';
     audio.sfx(reason === 'SHATTERED' ? 'shatter' : 'gameover');
+    track('death', { reason, ante: this.ante, score: this.score });
     store.runSave = null;
     store.runsPlayed++;
     save();

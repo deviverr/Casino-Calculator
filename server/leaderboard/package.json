@@ -1,0 +1,15 @@
+{
+  "name": "casino-calculator-leaderboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migrate:local": "wrangler d1 migrations apply casino-calculator --local",
+    "migrate:remote": "wrangler d1 migrations apply casino-calculator --remote",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.51.0"
+  }
+}

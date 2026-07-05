@@ -10,7 +10,8 @@ Casino Calculator is a fake-money arcade roguelike: wager fictional chips, read 
 - Pixel CRT game UI rendered to an offscreen canvas and mapped onto the cabinet screen.
 - Physical 3D calculator keyboard plus full keyboard controls.
 - Roguelike runs with antes, debts, magazines, combo multipliers, shops, perks, items, and overtime.
-- Local leaderboard with arcade initials.
+- Local leaderboard with arcade initials, plus optional global leaderboard backend.
+- Optional privacy-respecting analytics hooks for launch validation.
 - A fully working CALCULATOR mode on the CRT, because the machine is literally a calculator.
 - Table-limit economy: you can never wager more than your current debt.
 - Settings for volume, CRT effects, flicker, camera sway, and 3D/2D rendering.
@@ -36,6 +37,16 @@ npm run preview
 ```
 
 The Vite build uses a relative base path, so the static output works on project-style hosts such as GitHub Pages.
+
+## Itch.io Package
+
+```sh
+npm run package:itch
+```
+
+Upload `casino-calculator-web.zip` as an HTML game. The package remains fully
+local-only unless you build with `VITE_LEADERBOARD_URL` and/or
+`VITE_ANALYTICS_URL`.
 
 ## Docker
 
@@ -67,3 +78,6 @@ Casino Calculator is a parody video game. It uses fictional chips only. It is no
 
 Pushes to `main` auto-deploy to GitHub Pages via `.github/workflows/deploy.yml`.
 One-time setup: repo **Settings → Pages → Source: GitHub Actions**.
+
+The optional Cloudflare backend lives in `server/leaderboard`. It provides
+global scores and coarse launch analytics; the game does not require it to run.

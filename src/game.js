@@ -7,6 +7,8 @@ import { store, save, wipe, qualifies, addScore } from './store.js';
 import { audio } from './audio.js';
 import { Run } from './run.js';
 import { BOOT_LINES, TWISTS, FINAL_ANTE, itemById, perkById, quotaFor } from './content.js';
+import { track } from './analytics.js';
+import { remoteEnabled, fetchTop, submitScore } from './leaderboard.js';
 
 const { PAL, W, H } = S;
 
@@ -218,8 +220,8 @@ const title = {
     else if (k === '=') {
       const id = items[this.cursor].id;
       audio.sfx('ok');
-      if (id === 'continue') { game.run = Run.restore(store.runSave); game.go('play'); }
-      else if (id === 'new') { game.run = new Run(); game.go('play'); }
+      if (id === 'continue') { track('run_continue', { ante: store.runSave?.ante }); game.run = Run.restore(store.runSave); game.go('play'); }
+      else if (id === 'new') { track('run_start'); game.run = new Run(); game.go('play'); }
       else game.go(id);
     }
   },
@@ -410,14 +412,35 @@ const disclaimer_view = {
 // ======================================================================
 const leaderboard = {
   highlight: -1,
-  enter(arg) { this.highlight = arg?.highlight ?? -1; },
-  key(k) { if (k === '=' || isBack(k)) { audio.sfx('back'); game.go('title'); } },
+  mode: 'local', // 'local' | 'global'
+  remote: null,  // null=loading, []=empty, 'error'=offline
+  enter(arg) {
+    this.highlight = arg?.highlight ?? -1;
+    this.mode = 'local';
+    this.remote = null;
+    if (remoteEnabled) {
+      fetchTop().then((l) => { this.remote = l; }).catch(() => { this.remote = 'error'; });
+    }
+  },
+  key(k) {
+    if (k === '=' || isBack(k)) { audio.sfx('back'); game.go('title'); return; }
+    if (remoteEnabled && (k === '4' || k === '6' || k === 'left' || k === 'right')) {
+      this.mode = this.mode === 'local' ? 'global' : 'local';
+      audio.sfx('nav');
+    }
+  },
   draw() {
     S.clear();
     S.textShadow('HALL OF SOLVENCY', W / 2, 18, 16, PAL.gold, 'center');
-    S.text('LOCAL RANKINGS - THIS MACHINE ONLY', W / 2, 42, 8, PAL.dim, 'center');
-    const lb = store.leaderboard;
-    if (!lb.length) {
+    const global = this.mode === 'global';
+    S.text(
+      global ? 'GLOBAL RANKINGS - EVERY MACHINE' : remoteEnabled ? 'LOCAL RANKINGS - THIS MACHINE' : 'LOCAL RANKINGS - THIS MACHINE ONLY',
+      W / 2, 42, 8, global ? PAL.cyan : PAL.dim, 'center',
+    );
+    const lb = global ? (Array.isArray(this.remote) ? this.remote : []) : store.leaderboard;
+    if (global && this.remote === null) S.text('CONNECTING...', W / 2, 140, 8, PAL.dim, 'center');
+    else if (global && this.remote === 'error') S.text('THE WIRE IS DOWN. TRY LATER.', W / 2, 140, 8, PAL.red, 'center');
+    else if (!lb.length) {
       S.text('NO SURVIVORS YET.', W / 2, 140, 8, PAL.dim, 'center');
       S.text('THE AUDITOR REMAINS UNDEFEATED.', W / 2, 158, 8, PAL.dim, 'center');
     }
@@ -425,16 +448,19 @@ const leaderboard = {
     S.text('RK  NAME       SCORE     ANTE', 60, y, 8, PAL.dim);
     y += 18;
     lb.forEach((e, i) => {
-      const col = i === this.highlight ? PAL.gold : i === 0 ? PAL.green : PAL.text;
+      const hl = !global && i === this.highlight;
+      const col = hl ? PAL.gold : i === 0 ? PAL.green : PAL.text;
       const rank = String(i + 1).padStart(2, ' ');
-      const name = e.name.padEnd(9, ' ');
+      const name = String(e.name).padEnd(9, ' ');
       const score = String(e.score).padStart(7, ' ');
       const ante = e.ante > FINAL_ANTE ? 'OT' + (e.ante - FINAL_ANTE) : String(e.ante);
       S.text(`${rank}  ${name}${score}      ${ante}`, 60, y, 8, col);
-      if (i === this.highlight && S.blink()) S.text('*', 40, y, 8, PAL.gold);
+      if (hl && S.blink()) S.text('*', 40, y, 8, PAL.gold);
       y += 18;
     });
-    hintsRow([['=', 'BACK']]);
+    const hints = [['=', 'BACK']];
+    if (remoteEnabled) hints.push(['4/6', global ? 'LOCAL' : 'GLOBAL']);
+    hintsRow(hints);
   },
 };
 
@@ -463,6 +489,7 @@ const nameentry = {
       else {
         const name = this.chars.map((c) => ALPHA[c]).join('');
         const idx = addScore(name, this.score, this.ante);
+        submitScore({ name, score: this.score, ante: this.ante });
         audio.sfx('victory');
         game.go('leaderboard', { highlight: idx });
       }
@@ -581,6 +608,7 @@ const donate = {
   give(n) {
     store.donated += n;
     save();
+    track('fake_donation', { n });
     this.thanks = THANKS[Math.min(THANKS.length - 1, Math.floor(Math.random() * THANKS.length))];
     this.thanksT = 3;
     audio.sfx('donate');

@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "casino-calculator-leaderboard",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "casino-calculator",
+      // create with: wrangler d1 create casino-calculator, then paste the id here
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ]
+}
