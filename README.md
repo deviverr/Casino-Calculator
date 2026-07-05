@@ -11,6 +11,8 @@ Casino Calculator is a fake-money arcade roguelike: wager fictional chips, read 
 - Physical 3D calculator keyboard plus full keyboard controls.
 - Roguelike runs with antes, debts, magazines, combo multipliers, shops, perks, items, and overtime.
 - Local leaderboard with arcade initials.
+- A fully working CALCULATOR mode on the CRT, because the machine is literally a calculator.
+- Table-limit economy: you can never wager more than your current debt.
 - Settings for volume, CRT effects, flicker, camera sway, and 3D/2D rendering.
 - Synthesized chiptune soundtrack and sound effects with no audio asset downloads.
 - Fake donation machine and clear disclaimers: no real gambling, no cashout, fake in-game chips only.
@@ -52,7 +54,7 @@ Open `http://127.0.0.1:8080/`.
 - `T` and `B` also call TRUE/BLUFF from the keyboard.
 - Settings can switch call controls between cabinet `=/C`, classic `+/-`, and keyboard `T/B`.
 - `%`: wager half.
-- `x` / `*`: all in, or let it ride after a win.
+- `x` / `*`: max wager (table limit), or let it ride after a win.
 - `/`: cash out early when eligible, or reroll the shop.
 - `1`-`4`: use item slots during a shell.
 - `C` / `Esc`: back, clear, or pause depending on context.

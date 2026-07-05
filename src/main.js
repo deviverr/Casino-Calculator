@@ -37,7 +37,10 @@ function buildFlatPad() {
   for (const k of CALC_KEYS) {
     const b = document.createElement('button');
     b.textContent = CALC_LABEL[k] || k;
-    if (['+', '-', 'x', '/', '%', '=', 'C', 'pm'].includes(k)) b.className = 'op';
+    if (k === '=') b.className = 'eq';
+    else if (k === 'C') b.className = 'clear';
+    else if (['+', '-', 'x', '/', '%', 'pm'].includes(k)) b.className = 'op';
+    else if (k === '0') b.className = 'zero';
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); pressKey(k); });
     pad.appendChild(b);
   }

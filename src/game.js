@@ -204,6 +204,7 @@ const title = {
     it.push({ id: 'new', label: 'NEW RUN' });
     it.push({ id: 'howto', label: 'HOW TO PLAY' });
     it.push({ id: 'leaderboard', label: 'LEADERBOARD' });
+    it.push({ id: 'calc', label: 'CALCULATOR' });
     it.push({ id: 'settings', label: 'SETTINGS' });
     it.push({ id: 'donate', label: 'DONATE (FAKE)' });
     it.push({ id: 'disclaimer', label: 'DISCLAIMER' });
@@ -480,6 +481,84 @@ const nameentry = {
     });
     S.text('SIGN THE MACHINE', W / 2, 220, 8, PAL.dim, 'center');
     hintsRow([['+', 'A-Z'], ['-', 'Z-A'], ['=', 'NEXT/OK']]);
+  },
+};
+
+// ======================================================================
+// CALCULATOR (it is, after all, literally a calculator)
+// ======================================================================
+const calc = {
+  cur: '0', prev: null, op: null, fresh: true,
+  enter() {
+    this.cur = '0'; this.prev = null; this.op = null; this.fresh = true;
+    audio.music('shop');
+  },
+  trim(n) {
+    if (!isFinite(n) || isNaN(n)) return 'ERROR';
+    const s = String(Math.round(n * 1e9) / 1e9);
+    return s.length > 13 ? n.toExponential(6) : s;
+  },
+  apply() {
+    const a = this.prev ?? 0;
+    const b = parseFloat(this.cur);
+    let r;
+    switch (this.op) {
+      case '+': r = a + b; break;
+      case '-': r = a - b; break;
+      case 'x': r = a * b; break;
+      case '/': r = b === 0 ? NaN : a / b; break;
+      default: r = b;
+    }
+    this.cur = this.trim(r);
+    this.prev = isNaN(r) || !isFinite(r) ? null : r;
+    this.fresh = true;
+  },
+  key(k) {
+    if (k === 'esc') { audio.sfx('back'); game.go('title'); return; }
+    if (k >= '0' && k <= '9') {
+      audio.sfx('key');
+      if (this.fresh) { this.cur = k; this.fresh = false; }
+      else if (this.cur.replace(/[-.]/g, '').length < 12) this.cur = this.cur === '0' ? k : this.cur + k;
+    } else if (k === '.') {
+      audio.sfx('key');
+      if (this.fresh) { this.cur = '0.'; this.fresh = false; }
+      else if (!this.cur.includes('.')) this.cur += '.';
+    } else if (k === 'C') {
+      audio.sfx('key');
+      // C clears; C on an already-clear calculator exits to the title
+      if (this.cur === '0' && this.op === null && this.prev === null) { audio.sfx('back'); game.go('title'); return; }
+      this.cur = '0'; this.prev = null; this.op = null; this.fresh = true;
+    } else if (k === 'pm') {
+      audio.sfx('key');
+      this.cur = this.cur.startsWith('-') ? this.cur.slice(1) : (this.cur === '0' ? '0' : '-' + this.cur);
+    } else if (k === '%') {
+      audio.sfx('key');
+      this.cur = this.trim(parseFloat(this.cur) / 100);
+      this.fresh = true;
+    } else if (['+', '-', 'x', '/'].includes(k)) {
+      audio.sfx('key');
+      if (this.op && !this.fresh) this.apply();
+      else this.prev = parseFloat(this.cur);
+      this.op = k;
+      this.fresh = true;
+    } else if (k === '=') {
+      audio.sfx('ok');
+      if (this.op) { this.apply(); this.op = null; }
+    }
+  },
+  draw() {
+    S.clear();
+    S.textShadow('CALCULATOR MODE', W / 2, 24, 16, PAL.cyan, 'center');
+    S.text('NO WAGERS HERE. JUST HONEST MATH.', W / 2, 50, 8, PAL.dim, 'center');
+    S.frame(60, 90, W - 120, 90, PAL.amber, PAL.dark);
+    const opGlyph = { '+': '+', '-': '-', x: 'x', '/': '/' };
+    const pending = this.op ? `${this.trim(this.prev ?? 0)} ${opGlyph[this.op]}` : '';
+    S.text(pending, 76, 104, 8, PAL.dim);
+    const size = this.cur.length > 13 ? 16 : 24;
+    S.text(this.cur, W - 76, 134, size, PAL.green, 'right');
+    S.text('THE ONLY SCREEN IN THIS MACHINE', W / 2, 220, 8, PAL.dim, 'center');
+    S.text('WHERE NUMBERS BEHAVE.', W / 2, 234, 8, PAL.dim, 'center');
+    hintsRow([['0-9', 'TYPE'], ['+-x/', 'OPS'], ['=', 'EQUALS'], ['C', 'CLEAR/EXIT']]);
   },
 };
 
@@ -894,5 +973,5 @@ const gameover = {
 // ======================================================================
 const scenes = {
   boot, disclaimer, disclaimer_view, title, howto, settings,
-  leaderboard, nameentry, donate, play, gameover,
+  leaderboard, nameentry, calc, donate, play, gameover,
 };
