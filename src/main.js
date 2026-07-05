@@ -73,6 +73,10 @@ async function boot() {
 
   setProgress(80, 'WAKING THE AUDITOR…');
 
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) game.autoPause();
+  });
+
   // input
   window.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -88,7 +92,7 @@ async function boot() {
   const flatCtx = world ? null : $('flatScreen').getContext('2d');
 
   game.go('boot');
-  window.__cc = { game, S, store, audio }; // console debug handle
+  window.__cc = { game, S, store, audio, world }; // console debug handle
   setProgress(100, 'DEAL ME IN.');
   setTimeout(() => $('loader').classList.add('done'), 250);
 

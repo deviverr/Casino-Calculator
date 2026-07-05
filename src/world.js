@@ -16,7 +16,7 @@ const KEY_LABEL = { pm: '+/-', x: '×', '/': '÷', '-': '−' };
 
   const CAMS = {
     title: { pos: [1.9, 1.65, 3.1], tgt: [0, 1.25, 0] },
-    play: { pos: [0, 1.52, 1.34], tgt: [0, 1.43, 0.2] },
+    play: { pos: [0, 1.5, 1.52], tgt: [0, 1.36, 0.15] },
     donate: { pos: [0.45, 0.85, 1.55], tgt: [0, 0.55, 0.3] },
   };
 
@@ -64,6 +64,11 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
   const marqueeGlow = new THREE.PointLight(0xffb640, 1.2, 4, 1.8);
   marqueeGlow.position.set(0, 2.15, 0.7);
   scene.add(marqueeGlow);
+
+  // CRT light spilling onto the keypad so the keys read from every camera
+  const deckGlow = new THREE.PointLight(0xbfe8d8, 0.9, 1.6, 1.3);
+  deckGlow.position.set(0, 1.28, 0.78);
+  scene.add(deckGlow);
 
   const ceilA = new THREE.PointLight(0xf3f7ff, 1.25, 9, 1.25);
   ceilA.position.set(-2.6, 3.0, 3.2);
@@ -435,12 +440,13 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
   cab.add(screen);
   box(1.16, 0.9, 0.03, mat.bodyDark, 0, 1.43, 0.385, cab); // bezel
 
-  // keypad deck
+  // keypad deck — protrudes from the cabinet like a real control panel
   const deck = new THREE.Group();
-  deck.position.set(0, 0.93, 0.38);
+  deck.position.set(0, 0.97, 0.5);
   deck.rotation.x = -0.42;
   cab.add(deck);
-  box(1.3, 0.06, 0.5, mat.bodyDark, 0, -0.03, 0.11, deck);
+  box(1.3, 0.06, 0.46, mat.bodyDark, 0, -0.03, 0.03, deck);
+  box(1.3, 0.5, 0.3, mat.bodyDark, 0, 0.68, 0.5, cab); // support under the deck
 
   const keyMeshes = [];
   const keyFont = (label) => canvasTexture(64, 64, (c) => {
@@ -461,7 +467,7 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
         : ['+', '-', 'x', '/', '%', 'pm'].includes(k) ? mat.keyOp : mat.keyNum;
       const key = new THREE.Mesh(new THREE.BoxGeometry(w, 0.035, 0.1), keyMat.clone());
       const x = -0.45 + cI * 0.15 + (wide ? 0.075 : 0);
-      const z = -0.15 + rI * 0.065; // down the slope
+      const z = -0.1 + rI * 0.062; // down the slope, clear of the cabinet face
       key.position.set(x, 0.02, z);
       key.userData.key = k;
       key.userData.baseY = 0.02;
@@ -531,21 +537,31 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
 
   function fitForViewport(base, state) {
     const portrait = Math.max(0, Math.min(1, (0.82 - camera.aspect) / 0.38));
-    if (!portrait) return base;
-    const extraZ = state === 'play' ? 1.9 : state === 'donate' ? 0.38 : 0.78;
-    const sideRelax = state === 'title' ? 0.68 : 0.82;
-    return {
-      pos: [
-        base.pos[0] * sideRelax,
-        base.pos[1] + 0.05 * portrait,
-        base.pos[2] + extraZ * portrait,
-      ],
-      tgt: [
-        base.tgt[0],
-        base.tgt[1] + 0.03 * portrait,
-        base.tgt[2],
-      ],
-    };
+    let out = base;
+    if (portrait) {
+      const extraZ = state === 'play' ? 1.9 : state === 'donate' ? 0.38 : 0.78;
+      const sideRelax = state === 'title' ? 0.68 : 0.82;
+      out = {
+        pos: [
+          base.pos[0] * sideRelax,
+          base.pos[1] + 0.05 * portrait,
+          base.pos[2] + extraZ * portrait,
+        ],
+        tgt: [
+          base.tgt[0],
+          base.tgt[1] + 0.03 * portrait,
+          base.tgt[2],
+        ],
+      };
+    }
+    if (state === 'play') {
+      // pull back until the whole CRT fits the horizontal FOV, whatever the aspect
+      const halfW = 0.6; // CRT half-width plus bezel margin
+      const tanH = Math.tan((camera.fov * Math.PI) / 360) * camera.aspect;
+      const zNeeded = 0.4 + halfW / tanH;
+      if (zNeeded > out.pos[2]) out = { pos: [out.pos[0], out.pos[1], zNeeded], tgt: out.tgt };
+    }
+    return out;
   }
 
   function resize() {

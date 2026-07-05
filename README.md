@@ -60,3 +60,8 @@ Open `http://127.0.0.1:8080/`.
 ## Disclaimer
 
 Casino Calculator is a parody video game. It uses fictional chips only. It is not real gambling, does not accept in-game payments, and offers no cashout, prize, refund, or financial value. The in-game donation machine is fake.
+
+## Deploy
+
+Pushes to `main` auto-deploy to GitHub Pages via `.github/workflows/deploy.yml`.
+One-time setup: repo **Settings → Pages → Source: GitHub Actions**.

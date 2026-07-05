@@ -44,7 +44,16 @@ export const game = {
     }
     return 'play';
   },
+
+  // tab hidden mid-run: pause so the wall-clock shell timer can't eat the wager
+  autoPause() {
+    if (this.scene !== 'play' || !this.run) return;
+    if (!['wager', 'call', 'result', 'ride'].includes(this.run.phase)) return;
+    if (!play.paused) play.togglePause();
+  },
 };
+
+const fmt = (n) => Math.round(n).toLocaleString('en-US');
 
 const isUp = (k) => k === '+' || k === 'up' || k === '8';
 const isDown = (k) => k === '-' || k === 'down' || k === '2';
@@ -249,6 +258,8 @@ const HOWTO_PAGES = [
     ['DEBT & DAMAGE', PAL.amber],
     ['When the magazine runs dry, the AUDITOR', 0],
     ['collects a DEBT. Cannot pay = REPOSSESSED.', 0],
+    ['TABLE LIMIT: you can never wager more', PAL.cyan],
+    ['than your current debt.', PAL.cyan],
     ['', 0],
     ['Every wrong call CRACKS the LCD. Run out', 0],
     ['of integrity and the screen SHATTERS.', 0],
@@ -459,7 +470,7 @@ const nameentry = {
   draw() {
     S.clear();
     S.textShadow('YOU MADE THE BOARD', W / 2, 50, 16, PAL.gold, 'center');
-    S.text(`SCORE ${this.score}`, W / 2, 84, 8, PAL.green, 'center');
+    S.text(`SCORE ${fmt(this.score)}`, W / 2, 84, 8, PAL.green, 'center');
     this.chars.forEach((c, i) => {
       const x = W / 2 - 60 + i * 60;
       const sel = i === this.pos;
@@ -642,10 +653,10 @@ const play = {
   drawTopBar(r) {
     S.rect(0, 0, W, 26, PAL.dark);
     S.rect(0, 26, W, 2, PAL.line);
-    S.text(`CHIPS ${r.chips}`, 8, 9, 8, PAL.gold);
+    S.text(`CHIPS ${fmt(r.chips)}`, 8, 9, 8, PAL.gold);
     const anteLabel = r.overtime || r.ante > FINAL_ANTE ? `OT${r.ante - FINAL_ANTE}` : `${r.ante}/${FINAL_ANTE}`;
     S.text(`ANTE ${anteLabel}`, 150, 9, 8, PAL.cyan);
-    S.text(`DEBT ${r.round.quota}`, 240, 9, 8, PAL.red);
+    S.text(`DEBT ${fmt(r.round.quota)}`, 240, 9, 8, PAL.red);
     // integrity blocks
     S.text('LCD', 352, 9, 8, PAL.dim);
     for (let i = 0; i < r.maxIntegrity; i++) {
@@ -704,12 +715,13 @@ const play = {
     S.frame(x, 96, 220, 34, PAL.amber, PAL.dark);
     const wtxt = r.wagerStr || '0';
     S.text(wtxt + (S.blink(0.7) ? '_' : ''), x + 10, 106, 16, PAL.gold);
-    S.text(`OF ${r.chips}`, x + 232, 108, 8, PAL.dim);
-    if (r.round.twist === 'highstakes') S.text(`MIN WAGER ${r.minWager()} (HIGH STAKES)`, x, 140, 8, PAL.red);
-    let y = 168;
+    S.text(`OF ${fmt(r.chips)}`, x + 232, 108, 8, PAL.dim);
+    S.text(`TABLE LIMIT ${fmt(r.maxWager())} (= YOUR DEBT)`, x, 140, 8, PAL.dim);
+    if (r.round.twist === 'highstakes') S.text(`MIN WAGER ${fmt(r.minWager())} (HIGH STAKES)`, x, 154, 8, PAL.red);
+    let y = 172;
     S.text('TYPE DIGITS. THE MACHINE IS', x, y, 8, PAL.dim);
     S.text('LITERALLY A CALCULATOR.', x, y + 13, 8, PAL.dim);
-    const hints = [['0-9', 'TYPE'], ['%', 'HALF'], ['x', 'ALL-IN'], ['=', 'DEAL']];
+    const hints = [['0-9', 'TYPE'], ['%', 'HALF'], ['x', 'MAX'], ['=', 'DEAL']];
     if (r.canCashOut()) hints.push(['/', 'CASH OUT']);
     let hx = x;
     for (const [k, label] of hints.slice(0, 4)) hx = S.keyHint(hx, 220, k, label);
@@ -763,7 +775,7 @@ const play = {
       S.text('THE RIDE IS OVER. EVERYTHING IS GONE.', x, 110, 8, PAL.dim);
     } else if (res.correct) {
       S.textShadow(res.rode ? 'DOUBLED!' : 'CORRECT!', x, 70, 24, PAL.green);
-      S.text(res.rode ? `STAKE NOW ${r.rideStake}` : `+${res.profit} CHIPS`, x, 108, 16, PAL.gold);
+      S.text(res.rode ? `STAKE NOW ${fmt(r.rideStake)}` : `+${fmt(res.profit)} CHIPS`, x, 108, 16, PAL.gold);
     } else {
       S.textShadow(res.timeout ? 'TOO SLOW' : 'WRONG', x, 70, 24, PAL.red);
       S.text(`TRUTH: ${res.truth}`, x, 108, 8, PAL.text);
@@ -772,7 +784,8 @@ const play = {
       if (res.refunded) S.text('CHIP MAGNET REFUNDED YOUR WAGER.', x, 162, 8, PAL.cyan);
     }
     const hints = [['=', 'CONTINUE']];
-    if (r.canRide()) hints.push(['x', `LET IT RIDE (${r.rideStake} AT STAKE)`]);
+    if (r.canRide()) hints.push(['x', `LET IT RIDE (${fmt(r.rideStake)} AT STAKE)`]);
+    else if (r.lastResult?.correct && r.rideWins >= 3) S.text('THE COIN IS TIRED. TABLE SAYS ENOUGH.', x, 176, 8, PAL.dim);
     let hx = x;
     let hy = 210;
     for (const [k, label] of hints) { S.keyHint(hx, hy, k, label, k === 'x' ? PAL.gold : PAL.amber); hy += 22; }
@@ -794,10 +807,10 @@ const play = {
     const can = r.chips >= r.round.quota;
     S.textShadow('THE AUDIT', W / 2, 60, 24, can ? PAL.cyan : PAL.red, 'center');
     S.text('THE AUDITOR SLIDES A CLAW ACROSS THE FELT', W / 2, 100, 8, PAL.dim, 'center');
-    S.text(`DEBT DUE:  ${r.round.quota}`, W / 2, 140, 16, PAL.red, 'center');
-    S.text(`YOU HOLD:  ${r.chips}`, W / 2, 166, 16, can ? PAL.green : PAL.red, 'center');
+    S.text(`DEBT DUE:  ${fmt(r.round.quota)}`, W / 2, 140, 16, PAL.red, 'center');
+    S.text(`YOU HOLD:  ${fmt(r.chips)}`, W / 2, 166, 16, can ? PAL.green : PAL.red, 'center');
     if (can) {
-      S.text(`AFTER PAYMENT: ${r.chips - r.round.quota}${r.has('interest') ? ' +10% INTEREST' : ''}`, W / 2, 200, 8, PAL.dim, 'center');
+      S.text(`AFTER PAYMENT: ${fmt(r.chips - r.round.quota)}${r.has('interest') ? ' +10% INTEREST' : ''}`, W / 2, 200, 8, PAL.dim, 'center');
       if (S.blink()) S.text('PRESS = TO PAY THE MAN', W / 2, 240, 8, PAL.amber, 'center');
     } else {
       S.text('YOU CANNOT PAY.', W / 2, 205, 8, PAL.red, 'center');
@@ -807,7 +820,7 @@ const play = {
 
   drawShop(r) {
     S.textShadow('BLACK MARKET SUPPLY CLOSET', W / 2, 36, 16, PAL.purple, 'center');
-    S.text(`CHIPS ${r.chips}   NEXT DEBT ${quotaFor(r.ante)}`, W / 2, 60, 8, PAL.dim, 'center');
+    S.text(`CHIPS ${fmt(r.chips)}   NEXT DEBT ${fmt(quotaFor(r.ante))}`, W / 2, 60, 8, PAL.dim, 'center');
     const offers = r.shopOffers();
     r.shop.cursor = Math.min(r.shop.cursor, offers.length - 1);
     let y = 84;
@@ -828,7 +841,7 @@ const play = {
   drawVictory(r) {
     S.textShadow('SOLVENT', W / 2, 60, 24, PAL.gold, 'center');
     S.text('ANTE 8 CLEARED. THE AUDITOR NODS, ONCE.', W / 2, 100, 8, PAL.text, 'center');
-    S.text(`SCORE ${r.score}   CHIPS ${r.chips}`, W / 2, 130, 8, PAL.green, 'center');
+    S.text(`SCORE ${fmt(r.score)}   CHIPS ${fmt(r.chips)}`, W / 2, 130, 8, PAL.green, 'center');
     S.text('THE MACHINE HUMS. IT OFFERS OVERTIME:', W / 2, 170, 8, PAL.dim, 'center');
     S.text('ENDLESS ANTES. RISING DEBTS. NO MERCY.', W / 2, 184, 8, PAL.dim, 'center');
     hintsRow([['=', 'OVERTIME'], ['C', 'BANK SCORE + RETIRE']], H - 24);
@@ -867,7 +880,7 @@ const gameover = {
         : 'THE AUDITOR TOOK THE MACHINE. AND YOUR DIGNITY.',
       W / 2, 122, 8, PAL.dim, 'center',
     );
-    S.text(`FINAL SCORE  ${this.data.score}`, W / 2, 160, 16, PAL.gold, 'center');
+    S.text(`FINAL SCORE  ${fmt(this.data.score)}`, W / 2, 160, 16, PAL.gold, 'center');
     S.text(`REACHED ANTE ${this.data.ante}`, W / 2, 190, 8, PAL.text, 'center');
     if (qualifies(this.data.score) && S.blink()) {
       S.text('HIGH SCORE! PRESS = TO SIGN', W / 2, 230, 8, PAL.green, 'center');
