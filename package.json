@@ -1,0 +1,23 @@
+{
+  "name": "casino-calculator",
+  "private": true,
+  "version": "2.0.0",
+  "description": "A calculator that gambles. Pixel-CRT roguelike running on a 3D arcade cabinet in an empty office. 100% fake money.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@fontsource/press-start-2p": "^5.0.0",
+    "three": "^0.166.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.6"
+  }
+}
