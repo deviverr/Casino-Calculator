@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casino Calculator</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B0%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="table">
+    <h1 class="marquee">♦ CASINO CALCULATOR ♦</h1>
+
+    <div class="stats">
+      <div class="stat"><span class="stat-label">CHIPS</span><span class="stat-value" id="statChips">500</span></div>
+      <div class="stat"><span class="stat-label">STREAK</span><span class="stat-value" id="statStreak">0</span></div>
+      <div class="stat"><span class="stat-label">BEST</span><span class="stat-value" id="statBest">0</span></div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="tab active" id="tabGamble">GAMBLE</button>
+      <button class="tab" id="tabCalc">CALC</button>
+    </div>
+
+    <div class="calculator" id="calculator">
+      <div class="display">
+        <div class="display-tag" id="displayTag">PLACE YOUR BET</div>
+        <div class="display-main" id="displayMain">BET 0</div>
+      </div>
+      <div class="timer"><div class="timer-fill" id="timerFill"></div></div>
+
+      <!-- GAMBLE PAD -->
+      <div class="pad" id="gamblePad">
+        <div class="group" id="groupBet">
+          <div class="chip-row">
+            <button class="chip" data-chip="10">+10</button>
+            <button class="chip" data-chip="25">+25</button>
+            <button class="chip" data-chip="100">+100</button>
+            <button class="chip chip-gold" data-chip="all">ALL</button>
+            <button class="chip chip-clear" data-chip="clear">CLR</button>
+          </div>
+          <button class="btn wide btn-deal" id="dealBtn">DEAL</button>
+        </div>
+        <div class="group hidden" id="groupDecide">
+          <div class="decide-row">
+            <button class="btn btn-true" id="trueBtn">✓ TRUE</button>
+            <button class="btn btn-bluff" id="bluffBtn">✗ BLUFF</button>
+          </div>
+        </div>
+        <div class="group hidden" id="groupOffer">
+          <div class="decide-row">
+            <button class="btn btn-double" id="doubleBtn">♠ DOUBLE</button>
+            <button class="btn btn-collect" id="collectBtn">COLLECT</button>
+          </div>
+        </div>
+        <div class="group hidden" id="groupBust">
+          <button class="btn wide btn-comp" id="compBtn">TAKE 100 CHIP COMP</button>
+        </div>
+      </div>
+
+      <!-- CALC PAD -->
+      <div class="pad hidden" id="calcPad">
+        <div class="calc-grid">
+          <button class="btn key key-fn" data-key="C">C</button>
+          <button class="btn key key-fn" data-key="±">±</button>
+          <button class="btn key key-fn" data-key="%">%</button>
+          <button class="btn key key-op" data-key="÷">÷</button>
+          <button class="btn key" data-key="7">7</button>
+          <button class="btn key" data-key="8">8</button>
+          <button class="btn key" data-key="9">9</button>
+          <button class="btn key key-op" data-key="×">×</button>
+          <button class="btn key" data-key="4">4</button>
+          <button class="btn key" data-key="5">5</button>
+          <button class="btn key" data-key="6">6</button>
+          <button class="btn key key-op" data-key="−">−</button>
+          <button class="btn key" data-key="1">1</button>
+          <button class="btn key" data-key="2">2</button>
+          <button class="btn key" data-key="3">3</button>
+          <button class="btn key key-op" data-key="+">+</button>
+          <button class="btn key key-zero" data-key="0">0</button>
+          <button class="btn key" data-key=".">.</button>
+          <button class="btn key key-eq" data-key="=">=</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <button class="link-btn" id="soundBtn">🔊 SOUND</button>
+      <button class="link-btn" id="resetBtn">↺ RESET</button>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
