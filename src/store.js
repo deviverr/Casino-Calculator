@@ -11,6 +11,7 @@ const DEFAULTS = {
     sway: true,
     flash: true,   // screen flash effects (accessibility)
     video3d: true, // false = 2D fallback mode
+    controls: 'cabinet',
   },
   leaderboard: [], // [{ name, score, ante, ts }]
   donated: 0,      // fake chips "donated" — a running gag

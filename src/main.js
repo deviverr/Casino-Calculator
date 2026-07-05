@@ -10,7 +10,7 @@ const $ = (id) => document.getElementById(id);
 
 const KEYBOARD_MAP = {
   Enter: '=', ' ': '=', Escape: 'esc', Backspace: 'C',
-  c: 'C', C: 'C', t: '+', T: '+', b: '-', B: '-', d: 'x', D: 'x',
+  c: 'C', C: 'C', t: 'true', T: 'true', b: 'bluff', B: 'bluff', d: 'x', D: 'x',
   '+': '+', '-': '-', '*': 'x', x: 'x', X: 'x', '/': '/', '%': '%',
   '=': '=', '.': '.', p: 'pm', P: 'pm',
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',

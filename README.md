@@ -48,8 +48,9 @@ Open `http://127.0.0.1:8080/`.
 
 - `Enter` / `=`: select, deal, continue, pay audit.
 - Digits: type a wager.
-- `+` or `T`: call TRUE.
-- `-` or `B`: call BLUFF.
+- Default cabinet mode: `=` calls TRUE, `C` calls BLUFF.
+- `T` and `B` also call TRUE/BLUFF from the keyboard.
+- Settings can switch call controls between cabinet `=/C`, classic `+/-`, and keyboard `T/B`.
 - `%`: wager half.
 - `x` / `*`: all in, or let it ride after a win.
 - `/`: cash out early when eligible, or reroll the shop.

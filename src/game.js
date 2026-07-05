@@ -50,6 +50,54 @@ const isUp = (k) => k === '+' || k === 'up' || k === '8';
 const isDown = (k) => k === '-' || k === 'down' || k === '2';
 const isBack = (k) => k === 'C' || k === 'esc';
 
+const CONTROL_PRESETS = [
+  {
+    id: 'cabinet',
+    name: '= TRUE / C BLUFF',
+    trueKeys: ['=', 'true'],
+    bluffKeys: ['C', 'bluff'],
+    trueHint: '=',
+    bluffHint: 'C',
+    trueLabel: '= TRUE',
+    bluffLabel: 'C BLUFF',
+    note: 'GREEN = TRUE, RED C = BLUFF. T/B ALSO WORK.',
+  },
+  {
+    id: 'classic',
+    name: '+ TRUE / - BLUFF',
+    trueKeys: ['+', 'true'],
+    bluffKeys: ['-', 'bluff'],
+    trueHint: '+',
+    bluffHint: '-',
+    trueLabel: '+ TRUE',
+    bluffLabel: '- BLUFF',
+    note: 'CLASSIC MATH SIGNS. T/B ALSO WORK.',
+  },
+  {
+    id: 'letters',
+    name: 'T TRUE / B BLUFF',
+    trueKeys: ['true'],
+    bluffKeys: ['bluff'],
+    trueHint: 'T',
+    bluffHint: 'B',
+    trueLabel: 'T TRUE',
+    bluffLabel: 'B BLUFF',
+    note: 'KEYBOARD MODE. CABINET KEYS STILL TYPE WAGERS.',
+  },
+];
+
+function controls() {
+  return CONTROL_PRESETS.find((p) => p.id === store.settings.controls) || CONTROL_PRESETS[0];
+}
+
+function cycleControls(dir = 1) {
+  const current = CONTROL_PRESETS.findIndex((p) => p.id === store.settings.controls);
+  const next = (Math.max(0, current) + dir + CONTROL_PRESETS.length) % CONTROL_PRESETS.length;
+  store.settings.controls = CONTROL_PRESETS[next].id;
+  save();
+  audio.sfx('nav');
+}
+
 function drawLogo(y) {
   S.textShadow('CASINO', W / 2, y, 24, PAL.amber, 'center');
   S.textShadow('CALCULATOR', W / 2, y + 30, 24, PAL.green, 'center');
@@ -188,8 +236,10 @@ const HOWTO_PAGES = [
     ['TRUE and how many are BLUFFS - not which.', 0],
     ['', 0],
     ['For each shell: type a WAGER, press = to', 0],
-    ['DEAL, then call + TRUE or - BLUFF before', 0],
-    ['the timer dies. Bluffs are subtle: off by', 0],
+    ['DEAL, then call TRUE or BLUFF before', 0],
+    ['the timer dies. Default cabinet controls:', 0],
+    ['= TRUE and C BLUFF. T/B also work.', PAL.green],
+    ['Bluffs are subtle: off by', 0],
     ['a little, or two digits swapped.', 0],
     ['', 0],
     ['Count the shells. If only bluffs remain,', PAL.green],
@@ -265,6 +315,7 @@ const settings = {
       { id: 'crt', label: 'CRT EFFECTS', val: s.crt },
       { id: 'sway', label: 'CAMERA SWAY', val: s.sway },
       { id: 'flash', label: 'FLICKER FX', val: s.flash },
+      { id: 'controls', label: 'CALL CONTROLS', val: controls().name },
       { id: 'video3d', label: 'RENDERER', val: s.video3d },
       { id: 'disclaimer', label: 'VIEW DISCLAIMER' },
       { id: 'wipe', label: this.confirmWipe ? 'SURE? = ERASES EVERYTHING' : 'RESET ALL DATA' },
@@ -280,6 +331,9 @@ const settings = {
     } else if (['crt', 'sway', 'flash'].includes(row.id)) {
       s[row.id] = !s[row.id];
       audio.sfx('nav');
+    } else if (row.id === 'controls') {
+      cycleControls(dir);
+      return;
     } else if (row.id === 'video3d') {
       s.video3d = !s.video3d;
       save();
@@ -319,10 +373,14 @@ const settings = {
       } else if (typeof row.val === 'boolean') {
         const label = row.id === 'video3d' ? (row.val ? '3D' : '2D') : row.val ? 'ON' : 'OFF';
         S.text(label, 300, y, 8, row.val ? PAL.green : PAL.red);
+      } else if (typeof row.val === 'string') {
+        S.text(row.val, 238, y, 8, PAL.amber);
       }
       y += 24;
     });
-    if (this.rows()[this.cursor].id === 'video3d') {
+    if (this.rows()[this.cursor].id === 'controls') {
+      S.text(controls().note, W / 2, H - 40, 8, PAL.dim, 'center');
+    } else if (this.rows()[this.cursor].id === 'video3d') {
       S.text('SWITCHING RENDERER RELOADS THE GAME', W / 2, H - 40, 8, PAL.dim, 'center');
     }
     hintsRow([['+', 'UP'], ['-', 'DN'], ['4', 'LESS'], ['6', 'MORE'], ['=', 'SET'], ['C', 'BACK']]);
@@ -528,8 +586,8 @@ const play = {
         else if (k === '/') r.cashOut();
         break;
       case 'call':
-        if (k === '+') r.resolve(true);
-        else if (k === '-') r.resolve(false);
+        if (controls().trueKeys.includes(k)) r.resolve(true);
+        else if (controls().bluffKeys.includes(k)) r.resolve(false);
         else if (k >= '1' && k <= '4') r.useItem(Number(k) - 1);
         break;
       case 'result':
@@ -658,7 +716,8 @@ const play = {
     hx = x;
     if (r.canCashOut()) hx = S.keyHint(hx, 240, '/', `CASH OUT (DEBT ${r.round.quota} PAID EARLY)`, PAL.green);
     S.keyHint(x, 262, 'C', 'CLEAR', PAL.dim);
-    hintsRow([['+/-', 'LATER: TRUE/BLUFF'], ['+-', 'PAUSE']], H - 16);
+    const c = controls();
+    hintsRow([[`${c.trueHint}/${c.bluffHint}`, 'LATER: TRUE/BLUFF'], ['+/-', 'MENU NAV'], ['pm', 'PAUSE']], H - 16);
   },
 
   drawCall(r) {
@@ -686,13 +745,14 @@ const play = {
     if (r.mods.jackpot) { S.text('JACKPOT CELL ARMED: x3 / 2 CRACKS', x, ry, 8, PAL.gold); ry += 15; }
 
     // big call buttons
+    const c = controls();
     S.frame(x, 196, 130, 44, PAL.green, '#12301b');
-    S.text('+ TRUE', x + 22, 212, 8, PAL.green);
+    S.text(c.trueLabel, x + 22, 212, 8, PAL.green);
     S.frame(x + 150, 196, 130, 44, PAL.red, '#301218');
-    S.text('- BLUFF', x + 170, 212, 8, PAL.red);
+    S.text(c.bluffLabel, x + 170, 212, 8, PAL.red);
 
     S.text(`PAYS x${r.payoutMult(s).toFixed(2)}`, x, 252, 8, PAL.amber);
-    hintsRow([['+', 'TRUE'], ['-', 'BLUFF'], ['1-4', 'ITEM']]);
+    hintsRow([[c.trueHint, 'TRUE'], [c.bluffHint, 'BLUFF'], ['T/B', 'KEYBOARD'], ['1-4', 'ITEM']]);
   },
 
   drawResult(r) {
