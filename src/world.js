@@ -12,11 +12,14 @@ const KEY_ROWS = [
   ['0', '0', '.', '='],
 ];
 
-const KEY_LABEL = { pm: '+/-', x: '×', '/': '÷', '-': '−' };
+const KEY_LABEL = { pm: '+/-', x: 'x', '/': '/', '-': '-' };
+
+// every canvas texture uses the same pixel font as the CRT
+const PIX = '"Press Start 2P", monospace';
 
   const CAMS = {
     title: { pos: [1.9, 1.65, 3.1], tgt: [0, 1.25, 0] },
-    play: { pos: [0, 1.52, 1.34], tgt: [0, 1.43, 0.2] },
+    play: { pos: [0, 1.5, 1.52], tgt: [0, 1.36, 0.15] },
     donate: { pos: [0.45, 0.85, 1.55], tgt: [0, 0.55, 0.3] },
   };
 
@@ -64,6 +67,11 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
   const marqueeGlow = new THREE.PointLight(0xffb640, 1.2, 4, 1.8);
   marqueeGlow.position.set(0, 2.15, 0.7);
   scene.add(marqueeGlow);
+
+  // CRT light spilling onto the keypad so the keys read from every camera
+  const deckGlow = new THREE.PointLight(0xbfe8d8, 0.9, 1.6, 1.3);
+  deckGlow.position.set(0, 1.28, 0.78);
+  scene.add(deckGlow);
 
   const ceilA = new THREE.PointLight(0xf3f7ff, 1.25, 9, 1.25);
   ceilA.position.set(-2.6, 3.0, 3.2);
@@ -272,9 +280,9 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
       new THREE.PlaneGeometry(2.4, 1.3),
       new THREE.MeshBasicMaterial({ map: winTex }),
     );
-    win.position.set(wx, 1.9, -5.97);
+    win.position.set(wx, 1.9, -5.94); // clearly in front of the frame: no z-fighting
     scene.add(win);
-    box(2.56, 1.46, 0.04, mat.dark, wx, 1.9, -5.99);
+    box(2.56, 1.46, 0.04, mat.dark, wx, 1.9, -5.98);
   }
 
   // desks with dead monitors
@@ -332,7 +340,7 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
     c.fillStyle = '#251823';
     c.fillRect(0, 0, 192, 384);
     c.fillStyle = '#ff4f6d';
-    c.font = 'bold 28px monospace';
+    c.font = `26px ${PIX}`;
     c.textAlign = 'center';
     c.fillText('SODA', 96, 58);
     c.fillStyle = '#26384b';
@@ -354,7 +362,7 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
     c.fillStyle = '#03140a';
     c.fillRect(0, 0, 128, 48);
     c.fillStyle = '#2fff7a';
-    c.font = 'bold 28px monospace';
+    c.font = `24px ${PIX}`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText('EXIT', 64, 26);
@@ -396,7 +404,7 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
 
   // side art stripes
   const stripeMat = new THREE.MeshLambertMaterial({ color: 0xb9483c });
-  for (const sx of [-0.651, 0.651]) {
+  for (const sx of [-0.656, 0.656]) {
     const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.9), stripeMat);
     stripe.position.set(sx, 1.03, -0.1);
     stripe.rotation.y = sx > 0 ? -Math.PI / 2 : Math.PI / 2;
@@ -405,21 +413,29 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
 
   // marquee
   const marqueeTex = canvasTexture(512, 96, (c) => {
-    c.fillStyle = '#33101c';
+    const g = c.createLinearGradient(0, 0, 0, 96);
+    g.addColorStop(0, '#451523');
+    g.addColorStop(1, '#2a0c16');
+    c.fillStyle = g;
     c.fillRect(0, 0, 512, 96);
-    c.fillStyle = '#ffb640';
-    c.font = 'bold 40px monospace';
+    // bulb dots along the edges
+    c.fillStyle = '#ffd97a';
+    for (let x = 14; x < 512; x += 32) { c.fillRect(x, 5, 5, 5); c.fillRect(x, 86, 5, 5); }
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText('CASINO CALCULATOR', 256, 42);
+    c.font = `26px ${PIX}`;
+    c.fillStyle = '#100408';
+    c.fillText('CASINO CALCULATOR', 258, 40);
+    c.fillStyle = '#ffb640';
+    c.fillText('CASINO CALCULATOR', 256, 38);
+    c.font = `12px ${PIX}`;
     c.fillStyle = '#7dff8a';
-    c.font = 'bold 16px monospace';
-    c.fillText('= TRUE OR BLUFF =', 256, 76);
+    c.fillText('= TRUE OR BLUFF =', 256, 72);
   });
   const marquee = new THREE.Mesh(new THREE.PlaneGeometry(1.26, 0.24), new THREE.MeshBasicMaterial({ map: marqueeTex }));
-  marquee.position.set(0, 1.95, 0.407);
+  marquee.position.set(0, 1.95, 0.412);
   cab.add(marquee);
-  box(1.3, 0.28, 0.02, mat.bodyDark, 0, 1.95, 0.392, cab);
+  box(1.3, 0.28, 0.02, mat.bodyDark, 0, 1.95, 0.398, cab);
 
   // CRT screen (the game)
   const screenTex = new THREE.CanvasTexture(screenCanvas);
@@ -431,43 +447,44 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
     new THREE.PlaneGeometry(1.04, 0.78),
     new THREE.MeshBasicMaterial({ map: screenTex }),
   );
-  screen.position.set(0, 1.43, 0.402);
+  screen.position.set(0, 1.43, 0.412);
   cab.add(screen);
-  box(1.16, 0.9, 0.03, mat.bodyDark, 0, 1.43, 0.385, cab); // bezel
+  box(1.16, 0.9, 0.03, mat.bodyDark, 0, 1.43, 0.393, cab); // bezel, clear of the body face
 
-  // keypad deck
+  // keypad deck — protrudes from the cabinet and slopes DOWN toward the player
   const deck = new THREE.Group();
-  deck.position.set(0, 0.93, 0.38);
-  deck.rotation.x = -0.42;
+  deck.position.set(0, 1.0, 0.48);
+  deck.rotation.x = 0.42;
   cab.add(deck);
-  box(1.3, 0.06, 0.5, mat.bodyDark, 0, -0.03, 0.11, deck);
+  box(1.3, 0.06, 0.46, mat.bodyDark, 0, -0.03, 0.03, deck);
+  box(1.3, 0.42, 0.34, mat.bodyDark, 0, 0.62, 0.52, cab); // pedestal under the deck
 
   const keyMeshes = [];
-  const keyFont = (label) => canvasTexture(64, 64, (c) => {
-    c.clearRect(0, 0, 64, 64);
+  const keyFont = (label) => canvasTexture(128, 64, (c) => {
+    c.clearRect(0, 0, 128, 64);
     c.fillStyle = '#10131a';
-    c.font = 'bold 30px monospace';
+    c.font = `${label.length > 1 ? 20 : 30}px ${PIX}`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(label, 32, 34);
+    c.fillText(label, 64, 34);
   });
 
   KEY_ROWS.forEach((row, rI) => {
     row.forEach((k, cI) => {
       if (k === '0' && cI === 1) return; // wide zero occupies two cells
       const wide = k === '0';
-      const w = wide ? 0.285 : 0.135;
+      const w = wide ? 0.32 : 0.15;
       const keyMat = k === '=' ? mat.keyEq : k === 'C' ? mat.keyC
         : ['+', '-', 'x', '/', '%', 'pm'].includes(k) ? mat.keyOp : mat.keyNum;
-      const key = new THREE.Mesh(new THREE.BoxGeometry(w, 0.035, 0.1), keyMat.clone());
-      const x = -0.45 + cI * 0.15 + (wide ? 0.075 : 0);
-      const z = -0.15 + rI * 0.065; // down the slope
+      const key = new THREE.Mesh(new THREE.BoxGeometry(w, 0.035, 0.055), keyMat.clone());
+      const x = -0.255 + cI * 0.17 + (wide ? 0.085 : 0); // centered on the deck
+      const z = -0.06 + rI * 0.066; // down the slope, clear of the cabinet face
       key.position.set(x, 0.02, z);
       key.userData.key = k;
       key.userData.baseY = 0.02;
       deck.add(key);
       const lab = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.09, 0.09),
+        new THREE.PlaneGeometry(0.1, 0.05),
         new THREE.MeshBasicMaterial({ map: keyFont(KEY_LABEL[k] || k), transparent: true }),
       );
       lab.rotation.x = -Math.PI / 2;
@@ -489,13 +506,13 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
     c.fillStyle = '#0a0c10';
     c.fillRect(103, 22, 50, 10);
     c.fillStyle = '#ffb640';
-    c.font = 'bold 17px monospace';
+    c.font = `14px ${PIX}`;
     c.textAlign = 'center';
-    c.fillText('FAKE DONATIONS', 128, 66);
-    c.fillText('ONLY', 128, 88);
+    c.fillText('FAKE DONATIONS', 128, 62);
+    c.fillText('ONLY', 128, 84);
     c.fillStyle = '#59d8ff';
-    c.font = '11px monospace';
-    c.fillText('NO REAL MONEY. EVER.', 128, 112);
+    c.font = `9px ${PIX}`;
+    c.fillText('NO REAL MONEY. EVER.', 128, 110);
   });
   const coinFace = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.38), new THREE.MeshBasicMaterial({ map: decal }));
   coinFace.position.set(0, 0.42, 0.415);
@@ -531,21 +548,31 @@ export function createWorld(glCanvas, screenCanvas, onKey) {
 
   function fitForViewport(base, state) {
     const portrait = Math.max(0, Math.min(1, (0.82 - camera.aspect) / 0.38));
-    if (!portrait) return base;
-    const extraZ = state === 'play' ? 1.9 : state === 'donate' ? 0.38 : 0.78;
-    const sideRelax = state === 'title' ? 0.68 : 0.82;
-    return {
-      pos: [
-        base.pos[0] * sideRelax,
-        base.pos[1] + 0.05 * portrait,
-        base.pos[2] + extraZ * portrait,
-      ],
-      tgt: [
-        base.tgt[0],
-        base.tgt[1] + 0.03 * portrait,
-        base.tgt[2],
-      ],
-    };
+    let out = base;
+    if (portrait) {
+      const extraZ = state === 'play' ? 1.9 : state === 'donate' ? 0.38 : 0.78;
+      const sideRelax = state === 'title' ? 0.68 : 0.82;
+      out = {
+        pos: [
+          base.pos[0] * sideRelax,
+          base.pos[1] + 0.05 * portrait,
+          base.pos[2] + extraZ * portrait,
+        ],
+        tgt: [
+          base.tgt[0],
+          base.tgt[1] + 0.03 * portrait,
+          base.tgt[2],
+        ],
+      };
+    }
+    if (state === 'play') {
+      // pull back until the whole CRT fits the horizontal FOV, whatever the aspect
+      const halfW = 0.6; // CRT half-width plus bezel margin
+      const tanH = Math.tan((camera.fov * Math.PI) / 360) * camera.aspect;
+      const zNeeded = 0.4 + halfW / tanH;
+      if (zNeeded > out.pos[2]) out = { pos: [out.pos[0], out.pos[1], zNeeded], tgt: out.tgt };
+    }
+    return out;
   }
 
   function resize() {

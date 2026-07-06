@@ -5,6 +5,7 @@ import * as S from './screen.js';
 import { store, load } from './store.js';
 import { audio } from './audio.js';
 import { game } from './game.js';
+import { track } from './analytics.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -37,7 +38,10 @@ function buildFlatPad() {
   for (const k of CALC_KEYS) {
     const b = document.createElement('button');
     b.textContent = CALC_LABEL[k] || k;
-    if (['+', '-', 'x', '/', '%', '=', 'C', 'pm'].includes(k)) b.className = 'op';
+    if (k === '=') b.className = 'eq';
+    else if (k === 'C') b.className = 'clear';
+    else if (['+', '-', 'x', '/', '%', 'pm'].includes(k)) b.className = 'op';
+    else if (k === '0') b.className = 'zero';
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); pressKey(k); });
     pad.appendChild(b);
   }
@@ -73,6 +77,10 @@ async function boot() {
 
   setProgress(80, 'WAKING THE AUDITOR…');
 
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) game.autoPause();
+  });
+
   // input
   window.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -88,7 +96,8 @@ async function boot() {
   const flatCtx = world ? null : $('flatScreen').getContext('2d');
 
   game.go('boot');
-  window.__cc = { game, S, store, audio }; // console debug handle
+  track('boot', { mode: world ? '3d' : '2d' });
+  window.__cc = { game, S, store, audio, world }; // console debug handle
   setProgress(100, 'DEAL ME IN.');
   setTimeout(() => $('loader').classList.add('done'), 250);
 

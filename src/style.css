@@ -46,15 +46,15 @@ html, body {
 
 #flatPad {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
-  width: min(96vw, 640px);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  width: min(96vw, 340px);
 }
 
 #flatPad button {
   font-family: inherit;
-  font-size: 11px;
-  padding: 10px 0;
+  font-size: 12px;
+  padding: 12px 0;
   color: #d7dde6;
   background: #1b2230;
   border: 2px solid #2c3648;
@@ -65,6 +65,9 @@ html, body {
 
 #flatPad button:active { border-bottom-width: 2px; transform: translateY(2px); }
 #flatPad button.op { color: var(--amber); }
+#flatPad button.eq { color: #06130a; background: var(--green); border-color: #2c7a42; }
+#flatPad button.clear { color: #fff; background: #b34a4a; border-color: #7a2c2c; }
+#flatPad button.zero { grid-column: span 2; }
 
 /* ---------- loader ---------- */
 #loader {

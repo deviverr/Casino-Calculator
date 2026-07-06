@@ -6,6 +6,7 @@ import {
 } from './content.js';
 import { audio } from './audio.js';
 import { store, save } from './store.js';
+import { track } from './analytics.js';
 
 const START_CHIPS = 100;
 const MIN_WAGER = 10;
@@ -33,11 +34,16 @@ export class Run {
   say(m) { this.msg = m; this.msgT = 2.2; }
 
   minWager() {
-    if (this.round.twist === 'highstakes') return Math.max(MIN_WAGER, Math.ceil(this.chips * 0.25));
-    return Math.min(MIN_WAGER, this.chips);
+    const min = this.round.twist === 'highstakes'
+      ? Math.max(MIN_WAGER, Math.ceil(this.chips * 0.25))
+      : Math.min(MIN_WAGER, this.chips);
+    return Math.min(min, this.maxWager());
   }
 
-  wager() { return Math.min(this.chips, parseInt(this.wagerStr || '0', 10) || 0); }
+  // the house sets a table limit: you may never wager more than your current debt
+  maxWager() { return Math.min(this.chips, this.round.quota); }
+
+  wager() { return Math.min(this.maxWager(), parseInt(this.wagerStr || '0', 10) || 0); }
 
   shell() { return this.round.shells[this.round.idx]; }
 
@@ -81,7 +87,7 @@ export class Run {
 
   setWagerPct(p) {
     if (this.phase !== 'wager') return;
-    this.wagerStr = String(Math.max(1, Math.floor(this.chips * p)));
+    this.wagerStr = String(Math.max(1, Math.floor(this.maxWager() * p)));
     audio.sfx('key');
   }
 
@@ -223,7 +229,10 @@ export class Run {
     this.nextShell();
   }
 
-  canRide() { return this.phase === 'result' && this.lastResult?.correct; }
+  canRide() {
+    // 3 consecutive rides max, or the weighted coin becomes a money printer
+    return this.phase === 'result' && this.lastResult?.correct && this.rideWins < 3;
+  }
 
   startRide() {
     if (!this.canRide()) { audio.sfx('denied'); return; }
@@ -277,9 +286,11 @@ export class Run {
     this.score += this.round.quota;
     if (this.has('interest')) this.chips += Math.min(200, Math.round(this.chips * 0.1));
     audio.sfx('cash');
+    track('ante_cleared', { ante: this.ante, chips: this.chips });
     if (this.ante === FINAL_ANTE && !this.overtime) {
       this.phase = 'victory';
       audio.sfx('victory');
+      track('victory', { score: this.score, chips: this.chips });
       this.persist();
       return;
     }
@@ -370,6 +381,7 @@ export class Run {
     this.deathReason = reason;
     this.phase = 'dead';
     audio.sfx(reason === 'SHATTERED' ? 'shatter' : 'gameover');
+    track('death', { reason, ante: this.ante, score: this.score });
     store.runSave = null;
     store.runsPlayed++;
     save();
