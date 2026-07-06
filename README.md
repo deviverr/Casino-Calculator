@@ -1,5 +1,7 @@
 # Casino Calculator
 
+**▶ [PLAY IT NOW on itch.io](https://deviver.itch.io/casino-calculator-game)** — free, in your browser.
+
 A calculator that gambles, rebuilt as a 3D arcade cabinet in an after-hours office.
 
 Casino Calculator is a fake-money arcade roguelike: wager fictional chips, read the CRT, and call whether each equation is TRUE or a BLUFF before the timer runs out. The run structure leans into Balatro-style buildcraft and Buckshot Roulette-style tension: shell magazines, audit debts, LCD damage, perks, consumable tools, escalating boss twists, and a risky let-it-ride coin flip.
